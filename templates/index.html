@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Voice Chat UI</title>
+    <!-- CSS for hiding PlayAI widget and styling custom UI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+
+    <style>
+        .playai-widget {
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: -9999 !important;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            background-color: #000000;
+        }
+
+        #custom-fullscreen-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(145deg, #000000, #000000);
+            color: #fff;
+            z-index: 99999 !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #custom-fullscreen-ui h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        #end-call {
+            margin-top: 80px;
+            padding: 15px 30px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #end-call:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Floating mic widget style */
+        #mic-widget {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #007BFF; /* Blue background color */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 99998; /* Ensure it's above other content but below the full-screen UI */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #mic-widget:hover {
+            transform: scale(1.1);
+        }
+
+        #mic-widget-icon {
+            font-size: 28px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- Custom full-screen UI container -->
+    <div id="custom-fullscreen-ui" style="display: none;">
+        <h1>Talking to the Assistant...</h1>
+        <button id="end-call">End Call</button>
+    </div>
+
+    <!-- Floating microphone widget button -->
+    <button id="mic-widget">
+        <i id="mic-widget-icon" class="fas fa-phone"></i>
+    </button>
+
+    <!-- Include the PlayAI embed script -->
+    <script type="text/javascript" src="https://unpkg.com/play-ai-embed"></script>
+
+    <!-- JavaScript to handle PlayAI widget and custom UI logic -->
+    <script type="text/javascript">
+        let micStream; // Variable to store the microphone stream
+
+        function hideOrRemovePlayAIWidget() {
+            const playaiWidget = document.querySelector('.playai-widget');
+            if (playaiWidget) {
+                playaiWidget.style.visibility = 'hidden';
+                playaiWidget.style.opacity = 0;
+                playaiWidget.style.pointerEvents = 'none';
+                playaiWidget.style.zIndex = '-9999';
+            }
+        }
+
+        function showCustomUI() {
+            document.getElementById('custom-fullscreen-ui').style.display = 'flex';
+        }
+
+        function stopMicStream() {
+            if (micStream) {
+                micStream.getTracks().forEach(track => track.stop());
+                micStream = null;
+            }
+        }
+
+        document.getElementById('mic-widget').addEventListener('click', () => {
+            PlayAI.open('Your-api-key');
+
+            const checkMicActivation = setInterval(() => {
+                navigator.mediaDevices.enumerateDevices().then((devices) => {
+                    const hasActiveMic = devices.some(device => device.kind === 'audioinput' && device.label);
+                    if (hasActiveMic) {
+                        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                            micStream = stream;
+                        });
+
+                        clearInterval(checkMicActivation);
+                        hideOrRemovePlayAIWidget();
+                        showCustomUI();
+                    }
+                });
+            }, 500);
+        });
+
+        document.getElementById('end-call').addEventListener('click', () => {
+            stopMicStream();
+            location.reload();
+        });
+    </script>
+
+</body>
+</html>
